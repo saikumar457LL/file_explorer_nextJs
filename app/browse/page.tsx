@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from "react";
 import FileInformation from "@/app/utils/constants";
 import ContextMenu, {MenuItem} from "@/app/contextMenu/ContextMenu";
+import InputComponent from "@/app/contextMenu/InputComponent";
 
 export default function FetchFiles() {
 
@@ -12,6 +13,7 @@ export default function FetchFiles() {
     const [parentPath, setParentPath] = useState("/")
 
     const storeCopyFileItemsRef = useRef<FileInformation[]>([]);
+
 
     const [menu, setMenu] = useState<{
         x:number,
@@ -23,6 +25,14 @@ export default function FetchFiles() {
         y:0,
         visible:false,
         file:null,
+    })
+
+    const [showInput, setShowInput] = useState<{
+        visible:boolean,
+        file:FileInformation | null
+    }>({
+        visible:false,
+        file:null
     })
 
 
@@ -50,6 +60,20 @@ export default function FetchFiles() {
 
     function onPasteMenuClick() {
 
+        const url = `http://localhost:7000/copyFiles`;
+        const filesToCopy = storeCopyFileItemsRef.current;
+        const destinationTo = menu.file?.parentDirectory;
+        fetch(url,{
+            method:"POST",
+            headers: {"Content-Type":"application/json"},
+            body:JSON.stringify({filesToCopy,destinationTo})
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+            })
+            .catch(err => console.log(err));
+
         // clear the stored copy items
         storeCopyFileItemsRef.current = []
     }
@@ -58,14 +82,27 @@ export default function FetchFiles() {
 
     }
 
+
     function onMoveMenuClick() {
 
+    }
+
+    function onDoubleClick(file: FileInformation) {
+        setShowInput({
+            visible:true,
+            file:file,
+        })
     }
 
     const contextMenuItems: MenuItem[] = [
         {
             label:"Open",
             action:() => onOpenMenuClick(),
+            icon:null
+        },
+        {
+            label:"Rename",
+            action: () => onDoubleClick(menu.file),
             icon:null
         },
         {
@@ -156,19 +193,23 @@ export default function FetchFiles() {
         </aside>
         <div className=" flex-1 p-4 overflow-auto grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] auto-rows-[100px] gap-5 content-start items-start">
             {files.map((file:FileInformation) => (
-                <div onClick={() => {
-                    if (file.isFile) {
-                        onFileClick(file);
-                    } else {
-                        onFolderClick(file);
-                    }
-                }} key={file.absPath} className="p-1 shadow hover:shadow-2xl transition cursor-pointer"
-                     onContextMenu={(event) => rightClickHandler(event, file)}
-                >
-                    {
-                        file.isDirectory ? <div className="text-4xl">📁</div> : <div className="text-4xl">📄</div>
-                    }
-                    <div className="truncate text-sm">{file.fileName}</div>
+                <div key={file.absPath}>
+                    <div onClick={() => {
+                        if (file.isFile) {
+                            onFileClick(file);
+                        } else {
+                            onFolderClick(file);
+                        }
+                    }}  className="p-1 shadow hover:shadow-2xl transition cursor-pointer"
+                         onContextMenu={(event) => rightClickHandler(event, file)}
+
+                    >
+                        {
+                            file.isDirectory ? <div className="text-4xl">📁</div> : <div className="text-4xl">📄</div>
+                        }
+
+                    </div>
+                    <div onDoubleClick={() => onDoubleClick(file)} className="truncate text-sm p-2">{file.fileName}</div>
                 </div>
             ))}
         </div>
@@ -178,6 +219,10 @@ export default function FetchFiles() {
                      visible={menu.visible}
                      menuItems={contextMenuItems}
                      onClose={() => setMenu((prev) => ({...prev,visible:false}))}/>
+
+        <InputComponent visible={showInput.visible} fileName={showInput.file?.fileName?showInput.file.fileName:""}
+                        onClose={() => setShowInput((prev) => ({...prev,visible:false}))}
+                        />
 
     </div>
 }
