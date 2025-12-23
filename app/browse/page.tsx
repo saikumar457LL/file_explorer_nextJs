@@ -51,7 +51,7 @@ export default function FetchFiles() {
     function onCopyMenuClick() {
         if(!menu.file) return
         const currentStoredItems = storeCopyFileItemsRef.current;
-        const exists = currentStoredItems.some(item => item.absPath === menu.file.absPath);
+        const exists = currentStoredItems.some(item => item.absPath === menu.file?.absPath);
         if(!exists) {
             currentStoredItems.push(menu.file)
         }
@@ -60,7 +60,7 @@ export default function FetchFiles() {
 
     function onPasteMenuClick() {
 
-        const url = `http://localhost:7000/copyFiles`;
+        const url = `http://192.168.0.207:7000/copyFiles`;
         const filesToCopy = storeCopyFileItemsRef.current;
         const destinationTo = menu.file?.parentDirectory;
         fetch(url,{
@@ -102,7 +102,10 @@ export default function FetchFiles() {
         },
         {
             label:"Rename",
-            action: () => onDoubleClick(menu.file),
+            action: () => {
+                if(menu.file) onDoubleClick(menu.file)
+
+            },
             icon:null
         },
         {
@@ -157,7 +160,7 @@ export default function FetchFiles() {
     }
 
     function onFileClick(file: FileInformation) {
-        const url = `http://localhost:7000/download?absPath=${encodeURIComponent(file.absPath)}`;
+        const url = `http://192.168.0.207:7000/download?absPath=${encodeURIComponent(file.absPath)}`;
 
         // otherwise download normally
         const link = document.createElement("a");
@@ -171,7 +174,7 @@ export default function FetchFiles() {
     }
 
     useEffect(() => {
-        fetch(`http://localhost:7000/browse?absPath=${encodeURIComponent(currentPath)}`)
+        fetch(`http://192.168.0.207:7000/browse?absPath=${encodeURIComponent(currentPath)}`)
             .then((res) => res.json())
             .then((data) => {
                 setFiles(data)
